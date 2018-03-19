@@ -1,4 +1,5 @@
 import requests  # pip install requests
+import json
 
 API_KEY = ""  # type API_KEY here
 API_SECRET = ""  # type API_SECRET here
@@ -14,7 +15,6 @@ class YotpoAPI(object):
         return self._token
 
     def auth(self):
-        print("Authenticating...")
         url = 'https://api.yotpo.com/oauth/token'
         data = {
             "client_id": API_KEY,
@@ -23,8 +23,6 @@ class YotpoAPI(object):
         }
 
         r = requests.post(url, data=data)
-        print("received credentials:", r.json())
-
         return r.json()['access_token']
 
     def send_review_request(self):
@@ -55,12 +53,8 @@ class YotpoAPI(object):
                 }
             }
         }
-        print("POST {}".format(url))
 
-        r = requests.post(url, data=data)
-
-        print("received:")
-        print(r.json())
+        r = requests.post(url, json=data)
 
         return r.json()
 
@@ -68,7 +62,35 @@ class YotpoAPI(object):
         url = 'https://api.yotpo.com/apps/{API_KEY}/purchases?utoken={TOKEN}&count=500'.format(TOKEN=self.token, API_KEY=API_KEY)
 
         r = requests.get(url)
-        # print(r.text)
+        return r.json()
+
+    def get_reviews(self):
+        url = 'https://api.yotpo.com/apps/{API_KEY}/reviews?utoken={token}&page=1&count=500'.format(token=self.token, API_KEY=API_KEY)
+
+        r = requests.get(url)
+        return r.json()
+
+    def reviews_me_url(self, product_id):
+        url = 'https://api.yotpo.com/v1/reviews_me/url/{API_KEY}/{product_id}'.format(product_id=product_id, API_KEY=API_KEY)
+
+        r = requests.get(url)
+        return r.json()
+
+    def get_products(self):
+        url = "https://api.yotpo.com/v1/apps/{API_KEY}/products?utoken={token}".format(token=self.token,  API_KEY=API_KEY)
+
+        r = requests.get(url)
+        return r.json()
+
+    def test_email(self):
+        url = "https://api.yotpo.com/apps/{API_KEY}/reminders/send_test_email?utoken={token}".format(token=self.token, API_KEY=API_KEY)
+
+        data = {
+            'email': "nale.sniku+testyotpo@gmail.com",
+            'utoken': self.token,
+        }
+
+        r = requests.post(url, json=data)
         return r.json()
 
 
@@ -78,12 +100,8 @@ class YotpoAPI(object):
 
 api = YotpoAPI()
 
-print("Retrieving orders...")
-print("current number of orders:", len(api.get_orders()['response']['purchases']))
-
 print("creating new order...")
 api.send_review_request()
 
-#This should print number higher by 1
-print("Retrieving orders, expecting one more than previously...")
-print("current number of orders:", len(api.get_orders()['response']['purchases']))
+print("retrieving orders...")
+print(json.dumps(api.get_orders(), indent=4))
